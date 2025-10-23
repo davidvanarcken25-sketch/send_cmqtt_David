@@ -4,74 +4,62 @@ import streamlit as st
 import json
 import platform
 
-# Muestra la versión de Python junto con detalles adicionales
+# Información del sistema
 st.write("Versión de Python:", platform.python_version())
 
-values = 0.0
-act1="OFF"
+# Variables iniciales
+velocidad = 0.0
+motor = "APAGADO"
 
-def on_publish(client,userdata,result):             #create function for callback
-    print("el dato ha sido publicado \n")
+# Funciones MQTT
+def on_publish(client, userdata, result):
+    print("Dato publicado con éxito\n")
     pass
 
 def on_message(client, userdata, message):
     global message_received
-    time.sleep(2)
-    message_received=str(message.payload.decode("utf-8"))
-    st.write(message_received)
+    message_received = str(message.payload.decode("utf-8"))
+    st.write("Mensaje recibido:", message_received)
 
-        
+# Configuración del broker
+broker = "broker.mqttdashboard.com"
+port = 1883
+client = paho.Client("CAR_CONTROL_DAVID")
+client.on_message = on_message
 
+# Interfaz principal
+st.title("🚗 Control de Velocidad del Auto — MQTT")
 
-broker="broker.mqttdashboard.com"
-port=1883
-client1= paho.Client("GIT-HUB_david")
-client1.on_message = on_message
+# Botón para encender el motor
+if st.button('Encender motor'):
+    motor = "ENCENDIDO"
+    client = paho.Client("CAR_CONTROL_DAVID")
+    client.on_publish = on_publish
+    client.connect(broker, port)
+    mensaje = json.dumps({"Motor": motor})
+    client.publish("auto/motor", mensaje)
+    st.success("Motor encendido 🚘")
 
+# Botón para apagar el motor
+if st.button('Apagar motor'):
+    motor = "APAGADO"
+    client = paho.Client("CAR_CONTROL_DAVID")
+    client.on_publish = on_publish
+    client.connect(broker, port)
+    mensaje = json.dumps({"Motor": motor})
+    client.publish("auto/motor", mensaje)
+    st.warning("Motor apagado 💤")
 
+# Control de velocidad
+velocidad = st.slider('Selecciona la velocidad del auto (km/h)', 0.0, 200.0, 0.0)
+st.write(f"Velocidad seleccionada: {velocidad} km/h")
 
-st.title("MQTT Control")
-
-if st.button('ON'):
-    act1="ON"
-    client1= paho.Client("GIT-HUB_david")                           
-    client1.on_publish = on_publish                          
-    client1.connect(broker,port)  
-    message =json.dumps({"Act1":act1})
-    ret= client1.publish("cmqtt_sdavid", message)
- 
-    #client1.subscribe("Sensores")
-    
-    
-else:
-    st.write('')
-
-if st.button('OFF'):
-    act1="OFF"
-    client1= paho.Client("GIT-HUB_david")                           
-    client1.on_publish = on_publish                          
-    client1.connect(broker,port)  
-    message =json.dumps({"Act1":act1})
-    ret= client1.publish("cmqtt_sdavid", message)
-  
-    
-else:
-    st.write('')
-
-values = st.slider('Selecciona el rango de valores',0.0, 100.0)
-st.write('Values:', values)
-
-if st.button('Enviar valor analógico'):
-    client1= paho.Client("GIT-HUB_david")                           
-    client1.on_publish = on_publish                          
-    client1.connect(broker,port)   
-    message =json.dumps({"Analog": float(values)})
-    ret= client1.publish("cmqtt_adavid", message)
-    
- 
-else:
-    st.write('')
-
-
+if st.button('Enviar velocidad'):
+    client = paho.Client("CAR_CONTROL_DAVID")
+    client.on_publish = on_publish
+    client.connect(broker, port)
+    mensaje = json.dumps({"Velocidad": float(velocidad)})
+    client.publish("auto/velocidad", mensaje)
+    st.info(f"Velocidad enviada: {velocidad} km/h 🚀")
 
 
